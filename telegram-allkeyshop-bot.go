@@ -32,65 +32,66 @@ func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, aks *allkeyshop.
 	text := update.Message.Text
 	log.Printf("Message from %s %d: %s", chat.UserName, chat.ID, text)
 	defer elapsed()()
-	var response string
-
 	chatId := update.Message.Chat.ID
 
 	switch {
 	case !state.Contains(chatId):
-		response = handleInitial(aks, &update, state)
+		handleInitialRequest(bot, aks, &update, state)
 	default:
-		response = handleStated(aks, &update, state)
-	}
-
-	msg := tgbotapi.NewMessage(chatId, response)
-	if _, err := bot.Send(msg); err != nil {
-		log.Println(err.Error())
+		handleStatedRequest(bot, aks, &update, state)
 	}
 }
 
-func handleInitial(aks *allkeyshop.AksAPI, update *tgbotapi.Update, state *State) string {
-	var response string
-	if update.Message.IsCommand() {
-		return initialHelp
-	}
-	games := findGames(aks, update.Message.Text)
-	if len(games) <= 0 {
-		return "No results."
-	}
-	state.Add(update.Message.Chat.ID, games)
-	g, e := GetNextGames(games, 0, 10)
-	if e != nil {
-		log.Println(e.Error())
-		response = "Internal error."
-	} else {
-		response = FormatGames(g)
-	}
-	response += "\n" + foundHelp
-	return response
-}
-
-func handleStated(aks *allkeyshop.AksAPI, update *tgbotapi.Update, state *State) string {
+func handleInitialRequest(bot *tgbotapi.BotAPI, aks *allkeyshop.AksAPI, update *tgbotapi.Update, state *State) {
 	var response string
 	chatId := update.Message.Chat.ID
-	if !update.Message.IsCommand() {
-		return foundHelp
+
+	switch {
+	case update.Message.IsCommand():
+		response = initialHelp
+	default:
+		sendMessage(bot, chatId, fetchingGamesMessage)
+		games := findGames(aks, update.Message.Text)
+		if len(games) <= 0 {
+			response = noResultsMessage
+		} else {
+			state.Add(update.Message.Chat.ID, games)
+			g := GetNextGames(games, 0, 10)
+			response = FormatGames(g)
+		}
 	}
-	command := update.Message.Command()
-	if command == "cancel" {
+
+	response += "\n" + foundHelp
+	sendMessage(bot, chatId, response)
+}
+
+func handleStatedRequest(bot *tgbotapi.BotAPI, aks *allkeyshop.AksAPI, update *tgbotapi.Update, state *State) {
+	var response string
+	var input string
+	chatId := update.Message.Chat.ID
+	regex := regexp.MustCompile("^[0-9]*$")
+
+	switch {
+	case update.Message.IsCommand():
+		input = update.Message.Command()
+	default:
+		input = update.Message.Text
+	}
+
+	switch {
+	case regex.MatchString(input):
+		index, _ := strconv.Atoi(input)
+		game := state.Games(chatId)[index-1]
+		sendMessage(bot, chatId, fetchingDealsMessage)
+		deals := getBestDeals(getDeals(aks, game), 5)
+		response = FormatDeals(deals)
 		state.Remove(chatId)
-		return initialHelp
+	default:
+		response = foundHelp
 	}
-	match, _ := regexp.MatchString("^[0-9]*$", command)
-	if !match {
-		return foundHelp
-	}
-	input, _ := strconv.Atoi(command)
-	game := state.Games(chatId)[input-1]
-	deals := getDeals(aks, game)
-	response = FormatDeals(deals)
-	state.Remove(chatId)
-	return response
+
+	sendMessage(bot, chatId, response)
+	sendMessage(bot, chatId, initialHelp)
 }
 
 func findGames(aks *allkeyshop.AksAPI, input string) allkeyshop.Games {
@@ -101,4 +102,12 @@ func findGames(aks *allkeyshop.AksAPI, input string) allkeyshop.Games {
 func getDeals(aks *allkeyshop.AksAPI, game allkeyshop.Game) allkeyshop.Deals {
 	deals := aks.GetDeals(game)
 	return deals
+}
+
+func sendMessage(bot *tgbotapi.BotAPI, chatId int64, text string) {
+	msg := tgbotapi.NewMessage(chatId, text)
+	_, err := bot.Send(msg)
+	if err != nil {
+		log.Println(err)
+	}
 }

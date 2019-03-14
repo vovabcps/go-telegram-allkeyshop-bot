@@ -22,18 +22,31 @@ func FormatDeals(deals allkeyshop.Deals) string {
 	return result
 }
 
-func GetNextGames(games allkeyshop.Games, offset int, number int) (allkeyshop.Games, error) {
+func GetNextGames(games allkeyshop.Games, offset int, number int) allkeyshop.Games {
+	var result allkeyshop.Games
 	l := len(games)
 	if offset >= l {
-		return nil, OutOfBondsError{offset, len(games)}
+		result = nil
 	}
-	var result allkeyshop.Games
 	if l-offset < number {
 		result = games[offset:]
 	} else {
 		result = games[offset : offset+number]
 	}
-	return result, nil
+	return result
+}
+
+func getBestDeals(deals allkeyshop.Deals, n int) allkeyshop.Deals {
+	var result allkeyshop.Deals
+	l := len(deals)
+
+	if l-n < 0 {
+		result = deals[0:]
+	} else {
+		result = deals[0:n]
+	}
+	return result
+
 }
 
 func elapsed() func() {
