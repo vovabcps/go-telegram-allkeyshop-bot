@@ -46,7 +46,21 @@ func getBestDeals(deals allkeyshop.Deals, n int) allkeyshop.Deals {
 		result = deals[0:n]
 	}
 	return result
+}
 
+type IndexError struct {
+	Msg string
+}
+
+func (e *IndexError) Error() string {
+	return e.Msg
+}
+
+func getGameByNumber(games allkeyshop.Games, n int) (allkeyshop.Game, error) {
+	if len(games) < n {
+		 return allkeyshop.Game{}, &IndexError{}
+	}
+	return games[n-1], nil
 }
 
 func elapsed() func() {

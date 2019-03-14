@@ -81,17 +81,20 @@ func handleStatedRequest(bot *tgbotapi.BotAPI, aks *allkeyshop.AksAPI, update *t
 	switch {
 	case regex.MatchString(input):
 		index, _ := strconv.Atoi(input)
-		game := state.Games(chatId)[index-1]
-		sendMessage(bot, chatId, fetchingDealsMessage)
-		deals := getBestDeals(getDeals(aks, game), 5)
-		response = FormatDeals(deals)
-		state.Remove(chatId)
+		game, e := getGameByNumber(state.Games(chatId), index)
+		if e == nil {
+			sendMessage(bot, chatId, fetchingDealsMessage)
+			deals := getBestDeals(getDeals(aks, game), 5)
+			response = FormatDeals(deals)
+			state.Remove(chatId)
+		} else {
+			response = foundHelp
+		}
 	default:
 		response = foundHelp
 	}
 
 	sendMessage(bot, chatId, response)
-	sendMessage(bot, chatId, initialHelp)
 }
 
 func findGames(aks *allkeyshop.AksAPI, input string) allkeyshop.Games {
