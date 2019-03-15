@@ -1,6 +1,8 @@
 package main
 
-import "github.com/vovabcps/go-telegram-allkeyshop-bot/allkeyshop"
+import (
+	"github.com/vovabcps/go-telegram-allkeyshop-bot/allkeyshop"
+)
 
 type State struct {
 	chatState map[int64]ChatState
@@ -20,8 +22,8 @@ func (s *State) Contains(chatId int64) bool {
 	return c
 }
 
-func (s *State) Add(chatId int64, games allkeyshop.Games) {
-	s.chatState[chatId] = ChatState{games, 0}
+func (s *State) Add(chatId int64) {
+	s.chatState[chatId] = ChatState{}
 }
 
 func (s *State) Remove(chatId int64) {
@@ -39,4 +41,9 @@ func (s *State) Offset(chatId int64) int64 {
 type ChatState struct {
 	Games  allkeyshop.Games
 	Offset int64
+}
+
+
+func (cs *ChatState) SetGames(games allkeyshop.Games) {
+	cs.Games = games
 }

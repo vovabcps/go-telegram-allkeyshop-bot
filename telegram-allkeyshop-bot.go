@@ -50,15 +50,18 @@ func handleInitialRequest(bot *tgbotapi.BotAPI, aks *allkeyshop.AksAPI, update *
 	case update.Message.IsCommand():
 		response = initialHelp
 	default:
+		state.Add(update.Message.Chat.ID)
 		sendMessage(bot, chatId, fetchingGamesMessage)
 		games, e := findGames(aks, update.Message.Text)
 		if e!= nil {
 			response = internalErrorMessage
+			state.Remove(chatId)
 		} else {
 			if len(games) <= 0 {
 				response = noResultsMessage
+				state.Remove(chatId)
 			} else {
-				state.Add(update.Message.Chat.ID, games)
+				state.Get(update.Message.Chat.ID).SetGames(games)
 				g := GetNextGames(games, 0, 10)
 				response = FormatGames(g)
 				response += "\n" + foundHelp
