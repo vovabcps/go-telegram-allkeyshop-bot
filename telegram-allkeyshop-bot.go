@@ -31,7 +31,7 @@ func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, aks *allkeyshop.
 	chat := update.Message.Chat
 	text := update.Message.Text
 	log.Printf("Message from %s %d: %s", chat.UserName, chat.ID, text)
-	defer elapsed()()
+	defer elapsed(update.Message.Chat.ID, text)()
 	chatId := update.Message.Chat.ID
 
 	switch {
@@ -51,14 +51,18 @@ func handleInitialRequest(bot *tgbotapi.BotAPI, aks *allkeyshop.AksAPI, update *
 		response = initialHelp
 	default:
 		sendMessage(bot, chatId, fetchingGamesMessage)
-		games := findGames(aks, update.Message.Text)
-		if len(games) <= 0 {
-			response = noResultsMessage
+		games, e := findGames(aks, update.Message.Text)
+		if e!= nil {
+			response = internalErrorMessage
 		} else {
-			state.Add(update.Message.Chat.ID, games)
-			g := GetNextGames(games, 0, 10)
-			response = FormatGames(g)
-			response += "\n" + foundHelp
+			if len(games) <= 0 {
+				response = noResultsMessage
+			} else {
+				state.Add(update.Message.Chat.ID, games)
+				g := GetNextGames(games, 0, 10)
+				response = FormatGames(g)
+				response += "\n" + foundHelp
+			}
 		}
 	}
 
@@ -100,9 +104,9 @@ func handleStatedRequest(bot *tgbotapi.BotAPI, aks *allkeyshop.AksAPI, update *t
 	sendMessage(bot, chatId, response)
 }
 
-func findGames(aks *allkeyshop.AksAPI, input string) allkeyshop.Games {
-	games := aks.Find(input)
-	return games
+func findGames(aks *allkeyshop.AksAPI, input string) (allkeyshop.Games, error) {
+	games, e := aks.Find(input)
+	return games, e
 }
 
 func getDeals(aks *allkeyshop.AksAPI, game allkeyshop.Game) allkeyshop.Deals {

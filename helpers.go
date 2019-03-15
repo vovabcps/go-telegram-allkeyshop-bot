@@ -63,9 +63,9 @@ func getGameByNumber(games allkeyshop.Games, n int) (allkeyshop.Game, error) {
 	return games[n-1], nil
 }
 
-func elapsed() func() {
+func elapsed(chat int64, msg string) func() {
 	start := time.Now()
 	return func() {
-		fmt.Printf("took %v\n", time.Since(start))
+		fmt.Printf("%s from %d took %v\n", msg, chat, time.Since(start))
 	}
 }

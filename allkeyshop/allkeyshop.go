@@ -27,7 +27,7 @@ func Cache(dir string) func(*AksAPI) {
 }
 
 //Uses site search and returns slice of Game
-func (api *AksAPI) Find(input string) Games {
+func (api *AksAPI) Find(input string) (Games, error) {
 	var games Games
 	api.collector.OnHTML(".search-results-row-link", func(e *colly.HTMLElement) {
 		temp := Game{}
@@ -40,9 +40,9 @@ func (api *AksAPI) Find(input string) Games {
 	})
 	err := api.collector.Visit(rootUrl + "blog/catalogue/search-" + input)
 	if err != nil {
-		panic(err)
+		return Games{}, err
 	}
-	return games
+	return games, nil
 }
 
 func (api *AksAPI) GetDeals(game Game) Deals {
