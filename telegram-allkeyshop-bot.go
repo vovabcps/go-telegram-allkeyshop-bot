@@ -58,10 +58,10 @@ func handleInitialRequest(bot *tgbotapi.BotAPI, aks *allkeyshop.AksAPI, update *
 			state.Add(update.Message.Chat.ID, games)
 			g := GetNextGames(games, 0, 10)
 			response = FormatGames(g)
+			response += "\n" + foundHelp
 		}
 	}
 
-	response += "\n" + foundHelp
 	sendMessage(bot, chatId, response)
 }
 
@@ -90,6 +90,9 @@ func handleStatedRequest(bot *tgbotapi.BotAPI, aks *allkeyshop.AksAPI, update *t
 		} else {
 			response = foundHelp
 		}
+	case input == "cancel":
+		state.Remove(chatId)
+		response = initialHelp
 	default:
 		response = foundHelp
 	}
