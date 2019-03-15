@@ -57,11 +57,11 @@ func handleInitialRequest(bot *tgbotapi.BotAPI, aks *allkeyshop.AksAPI, update *
 			response = internalErrorMessage
 			state.Remove(chatId)
 		} else {
-			if len(games) <= 0 {
+			if len(games) < 1 {
 				response = noResultsMessage
 				state.Remove(chatId)
 			} else {
-				state.Get(update.Message.Chat.ID).SetGames(games)
+				state.SetGames(update.Message.Chat.ID, games)
 				g := GetNextGames(games, 0, 10)
 				response = FormatGames(g)
 				response += "\n" + foundHelp
@@ -88,14 +88,14 @@ func handleStatedRequest(bot *tgbotapi.BotAPI, aks *allkeyshop.AksAPI, update *t
 	switch {
 	case regex.MatchString(input):
 		index, _ := strconv.Atoi(input)
-		game, e := getGameByNumber(state.Games(chatId), index)
-		if e == nil {
+		game, e := state.Games(chatId).Get(index-1)
+		if e != nil {
+			response = foundHelp
+		} else {
 			sendMessage(bot, chatId, fetchingDealsMessage)
 			deals := getBestDeals(getDeals(aks, game), 5)
 			response = FormatDeals(deals)
 			state.Remove(chatId)
-		} else {
-			response = foundHelp
 		}
 	case input == "cancel":
 		state.Remove(chatId)

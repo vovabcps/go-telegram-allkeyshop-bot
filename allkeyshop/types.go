@@ -1,6 +1,8 @@
 package allkeyshop
 
-import "github.com/gocolly/colly"
+import (
+	"github.com/gocolly/colly"
+)
 
 type Game struct {
 	Title   string
@@ -21,5 +23,20 @@ type AksAPI struct {
 }
 
 type Games []Game
+
+type IndexError struct {
+	Msg string
+}
+
+func (e *IndexError) Error() string {
+	return e.Msg
+}
+
+func (games Games) Get(n int) (Game, error) {
+	if len(games) < n+1 {
+		return Game{}, &IndexError{}
+	}
+	return games[n], nil
+}
 
 type Deals []Deal

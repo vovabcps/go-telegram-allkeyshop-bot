@@ -5,16 +5,16 @@ import (
 )
 
 type State struct {
-	chatState map[int64]ChatState
+	chatState map[int64]allkeyshop.Games
 }
 
 func NewState() *State {
-	return &State{make(map[int64]ChatState)}
+	return &State{make(map[int64]allkeyshop.Games)}
 }
 
-func (s *State) Get(chatId int64) *ChatState {
+func (s *State) Get(chatId int64) allkeyshop.Games {
 	c := s.chatState[chatId]
-	return &c
+	return c
 }
 
 func (s *State) Contains(chatId int64) bool {
@@ -23,7 +23,7 @@ func (s *State) Contains(chatId int64) bool {
 }
 
 func (s *State) Add(chatId int64) {
-	s.chatState[chatId] = ChatState{}
+	s.chatState[chatId] = allkeyshop.Games{}
 }
 
 func (s *State) Remove(chatId int64) {
@@ -31,19 +31,10 @@ func (s *State) Remove(chatId int64) {
 }
 
 func (s *State) Games(chatId int64) allkeyshop.Games {
-	return s.Get(chatId).Games
-}
-
-func (s *State) Offset(chatId int64) int64 {
-	return s.Get(chatId).Offset
-}
-
-type ChatState struct {
-	Games  allkeyshop.Games
-	Offset int64
+	return s.Get(chatId)
 }
 
 
-func (cs *ChatState) SetGames(games allkeyshop.Games) {
-	cs.Games = games
+func (s *State) SetGames(i int64, games allkeyshop.Games) {
+	s.chatState[i] = games
 }
